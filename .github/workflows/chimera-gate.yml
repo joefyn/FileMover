@@ -1,0 +1,54 @@
+name: Chimera-Trunk Gate
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Validate Changed Runs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+      uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history to diff base/head SHAs
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML
+
+      - name: Identify changed run directories
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          # This finds all unique directories containing changed .json files in the PR
+          CHANGED_DIRS=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep '\.json$' | xargs -n 1 dirname | sort -u || true)
+          echo "dirs-to-validate=$CHANGED_DIRS" >> "$GITHUB_OUTPUT"
+          echo "Changed directories: $CHANGED_DIRS"
+
+      - name: Run Chimera validator
+        if: ${{ steps.changes.outputs.dirs-to-validate != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXIT=0
+          for d in ${{ steps.changes.outputs.dirs-to-validate }}; do
+            echo "Validating $d"
+            python cli/chimera.py validate "$d" || EXIT=1
+          done
+          exit $EXIT
+
+      - name: No changed JSON directories; skipping validation
+        if: ${{ steps.changes.outputs.dirs-to-validate == '' }}
+        run: echo "No changed JSON-containing directories detected in this PR; skipping validation."

@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chimera-trunk.dev/schemas/intent.schema.json",
+  "title": "Chimera Trunk – intent.json Artifact Schema",
+  "description": "Validates the intent.json artifact—the single-sentence 'why' for a change and the ordered plan to achieve it. This artifact must be authored by an actor assuming the TRUNK role; JSON Schema enforces local constraints, while the validator enforces cross-file role membership and run_id consistency.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "author", "intent", "plan"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of the intent.json artifact schema itself. Pinned to 1.0 to ensure stable validation across the MVP.",
+      "pattern": "^1\\.0$"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Unique, human-readable identifier for this change set (e.g., '20251003-refactor-auth-module'). Used to correlate artifacts within the same run."
+    },
+    "intent": {
+      "type": "string",
+      "description": "A clear, single-sentence statement describing the goal of the change."
+    },
+    "plan": {
+      "type": "array",
+      "description": "An ordered list of steps detailing how the intent will be achieved.",
+      "items": {
+        "type": "string",
+        "description": "A single executable step. Keep imperative and focused."
+      }
+    },
+    "author": {
+      "type": "object",
+      "description": "Metadata identifying the actor who authored this intent artifact. The actor must be eligible for the TRUNK role as defined in chimera.yaml; cross-file validation enforces membership.",
+      "additionalProperties": false,
+      "required": ["actor", "role", "timestamp"],
+      "properties": {
+        "actor": {
+          "type": "string",
+          "description": "Identifier of the author (e.g., 'username:Trunk', 'email:dev@example.com', or 'agent:planner-001'). Must appear in chimera.yaml under roles.TRUNK for cross-file validation."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["TRUNK"],
+          "description": "The role assumed by the author for this action. Restricted to 'TRUNK' to enforce that only strategists define intent."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp marking when the intent was created (e.g., '2025-10-03T12:34:56Z')."
+        }
+      }
+    }
+  }
+}

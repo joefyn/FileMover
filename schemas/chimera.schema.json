@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chimera-trunk.dev/schemas/chimera.schema.json",
+  "title": "Chimera Trunk – Root Configuration Schema (chimera.yaml)",
+  "description": "Validates the root project configuration for Chimera-Trunk. This file defines global settings and the assignment of actors to the TRUNK/BRANCH roles. The schema is intentionally minimal to uphold the MVP’s \"linter for intent\" philosophy and to keep cross-file validation deterministic.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "roles"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "The version of the chimera.yaml configuration format. Pinned to 1.0 for the MVP to guarantee validator determinism.",
+      "pattern": "^1\\.0$"
+    },
+    "roles": {
+      "type": "object",
+      "description": "Defines the actors (users or agents) assigned to the core roles. Actors are referenced via structured identifiers to ensure provenance across artifacts.",
+      "additionalProperties": false,
+      "required": ["TRUNK", "BRANCH"],
+      "properties": {
+        "TRUNK": {
+          "type": "array",
+          "description": "A list of actors who can assume the TRUNK role (strategists who define intent). Each entry must be a structured identifier of the form 'username:...', 'email:...', or 'agent:...'.",
+          "items": {
+            "type": "string",
+            "pattern": "^(username|email|agent):.+$",
+            "description": "Structured actor identifier used for cross-file role checks."
+          }
+        },
+        "BRANCH": {
+          "type": "array",
+          "description": "A list of actors who can assume the BRANCH role (executors who implement the intent). Each entry must be a structured identifier of the form 'username:...', 'email:...', or 'agent:...'.",
+          "items": {
+            "type": "string",
+            "pattern": "^(username|email|agent):.+$",
+            "description": "Structured actor identifier used for cross-file role checks."
+          }
+        }
+      }
+    }
+  }
+}

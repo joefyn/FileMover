@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chimera-trunk.dev/schemas/instructions.schema.json",
+  "title": "Instructions Artifact (instructions.json) Schema",
+  "description": "Validates the instructions.json artifact. This file bridges the WHY (intent) to the WHAT (diff) by declaring the HOW: a model-agnostic, step-by-step implementation plan that BRANCH authors will execute.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "author", "instructions"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of the instructions artifact schema itself. Keeps contract migrations explicit.",
+      "pattern": "^1\\.0$",
+      "examples": ["1.0"]
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Unique, human-readable identifier tying these instructions to a specific change set (e.g., date + slug).",
+      "minLength": 1,
+      "examples": ["20251003-refactor-auth-module", "20251003-add-ci-gate"]
+    },
+    "author": {
+      "type": "object",
+      "description": "Metadata identifying the actor who authored this instructions artifact. Only an actor in the BRANCH role may author the implementation plan.",
+      "additionalProperties": false,
+      "required": ["actor", "role", "timestamp"],
+      "properties": {
+        "actor": {
+          "type": "string",
+          "description": "Structured identifier of the author (e.g., username:Dev1). Must match the allowed namespace and should correspond to an entry in chimera.yaml roles.BRANCH. Cross-reference is enforced by the CLI validator.",
+          "pattern": "^(?:username|email|agent):.+$",
+          "examples": ["username:Dev1", "email:executor@example.com", "agent:codegen-worker-a"]
+        },
+        "role": {
+          "type": "string",
+          "description": "Role assumed by the author for this action. For instructions, only BRANCH is permitted.",
+          "enum": ["BRANCH"],
+          "examples": ["BRANCH"]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when the instructions were created.",
+          "examples": ["2025-10-03T15:02:17Z"]
+        }
+      }
+    },
+    "instructions": {
+      "type": "array",
+      "description": "An ordered list of machine-readable instructions for generating the code change. This is a more structured plan than the free-text intent.plan.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step", "target"],
+        "properties": {
+          "step": {
+            "type": "string",
+            "description": "A concise, imperative description of the action to perform.",
+            "minLength": 1,
+            "examples": [
+              "Create a new React component",
+              "Replace legacy token verifier with OAuth2 middleware",
+              "Add CI job to run chimera validate"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "description": "The primary file or resource the step operates on. Use project-relative paths for files.",
+            "minLength": 1,
+            "examples": [
+              "./src/components/RaceCar.tsx",
+              "./server/auth/oauth2.ts",
+              ".github/workflows/chimera-gate.yml"
+            ]
+          }
+        }
+      },
+      "examples": [
+        [
+          { "step": "Create a new React component", "target": "./src/components/RaceCar.tsx" },
+          { "step": "Wire component into route", "target": "./src/routes/index.tsx" },
+          { "step": "Add tests for new component", "target": "./tests/RaceCar.spec.ts" }
+        ]
+      ]
+    }
+  }
+}
